@@ -67,7 +67,7 @@ acs<-get_acs(geography = "tract",
 
 tables<-c("B14006","C17002","B19013","DP04","DP05","S1810","S2301")
 acs_tract<-acs_tables(tables = tables,
-                      key = key,
+                      key = .key,
                       geography = "tract",
                       state = "VA")
 
@@ -75,7 +75,7 @@ colnames=c("Census_tract","County","State")
 acs_tract_wide<-acs_wide(data=acs_tract,NAME_col_names = colnames)
 
 acs_state<-acs_tables(tables = tables,
-                      key = key,
+                      key = .key,
                       geography = "state")
 colnames="State"
 acs_state_wide<-acs_wide(data=acs_state,NAME_col_names = colnames)
