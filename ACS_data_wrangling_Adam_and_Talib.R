@@ -116,7 +116,21 @@ acs_Loudon<-acs_years_tables(tables=tables,
                              county="Loudoun",
                              NAME_col_names = colnames)
 
-
+acs_NoVa<-acs_years_tables(tables=tables,
+                             years=years,
+                             key=.key,
+                             geography="tract",
+                             state="VA",
+                             county=c("Arlington county",
+                                      "Fairfax county",
+                                      "Loudoun county",
+                                      "Prince William county",
+                                      "Alexandria city",
+                                      "Falls Church city",
+                                      "Fairfax city",
+                                      "Manassas city",
+                                      "Manassas Park city"),
+                             NAME_col_names = colnames)
 colnames="state"
 acs_state<-acs_years_tables(tables = tables,
                             key = .key,
@@ -160,12 +174,13 @@ acs_state_insecurity<-acs_state_insecurity%>%
   mutate(MedianIncome=B19013_001)%>%
   mutate(OwnRate=(DP04_0046P))%>%
   mutate(PerAfAm=(DP05_0038P))%>%
-  mutate(PerHisp=(DP05_0070P))%>%
+  mutate(PerHisp=(DP05_0071P))%>%
   mutate(DisRate=(S1810_C03_001))%>%
   mutate(Unemployment=S2301_C04_021)
 
 #Construct linear model with year and state as fixed effects
-Model<-lm(log(InsecurityRate)~PovertyRate+MedianIncome+OwnRate+PerAfAm+PerHisp+DisRate+Unemployment+as.factor(YEAR)+as.factor(STATEFIP)-1,data=acs_state_insecurity)
+Model<-lm(log(InsecurityRate)~PovertyRate+MedianIncome+OwnRate+PerAfAm+PerHisp+
+            DisRate+Unemployment+as.factor(YEAR)+as.factor(STATEFIP)-1,data=acs_state_insecurity)
 summary(Model)
 
 #Plot residuals v. fitted values to test for heteroscedasticity
@@ -178,7 +193,7 @@ acs_Loudon_insecurity<-acs_Loudon%>%
   mutate(MedianIncome=B19013_001)%>%
   mutate(OwnRate=(DP04_0046P))%>%
   mutate(PerAfAm=(DP05_0038P))%>%
-  mutate(PerHisp=(DP05_0070P))%>%
+  mutate(PerHisp=(DP05_0071P))%>%
   mutate(DisRate=(S1810_C03_001))%>%
   mutate(Unemployment=S2301_C04_021)
 
@@ -192,12 +207,41 @@ LoudounReduced<-as.data.frame(LoudounReduced)
 #Make predictions for Loudoun County based on national model.
 LoudounFoodInsecurity<-c()
 for(i in 1:length(LoudounReduced$PovertyRate))
-  {
+{
   p<-predict(Model,newdata = LoudounReduced[i,])
   LoudounFoodInsecurity[i]<-p
-  }
+}
 
 LoudounReduced<-cbind(LoudounReduced,LoudounFoodInsecurity)
+
+#Calculate model variables for NoVa
+acs_NoVa_insecurity<-acs_NoVa%>%
+  mutate(PovertyRate=((B14006_002-(B14006_009+B14006_010))/B14006_001)*100)%>%
+  mutate(MedianIncome=B19013_001)%>%
+  mutate(OwnRate=(DP04_0046P))%>%
+  mutate(PerAfAm=(DP05_0038P))%>%
+  mutate(PerHisp=DP05_0071P)%>%
+  mutate(DisRate=(S1810_C03_001))%>%
+  mutate(Unemployment=S2301_C04_021)
+
+NoVaReduced<-acs_NoVa_insecurity%>%
+  select(GEOID,year, Census_tract, County, State, PovertyRate, MedianIncome, OwnRate, PerAfAm, PerHisp, DisRate,Unemployment)%>%
+  rename(YEAR=year)
+
+NoVaReduced$STATEFIP<-as.integer(rep(51,times=length(NoVaReduced$GEOID)))
+NoVaReduced<-as.data.frame(NoVaReduced)
+
+#Make predictions for NoVa based on national model.
+NoVaFoodInsecurity<-c()
+for(i in 1:length(NoVaReduced$PovertyRate))
+{
+  p<-predict(Model,newdata = NoVaReduced[i,])
+  NoVaFoodInsecurity[i]<-p
+}
+
+NoVaReduced<-cbind(NoVaReduced,NoVaFoodInsecurity)
+
+
 
 #MAPPING
 
@@ -216,17 +260,81 @@ LoudounGeometry<-get_acs(geography = "tract",
   select(-c(11:12))
 
 # Join geometry data to food insecurity predictions and filter data by a particular year
-LoudonReducedGeom<-inner_join(LoudounReduced,LoudounGeometry,by="GEOID")%>%
+LoudounReducedGeom<-inner_join(LoudounReduced,LoudounGeometry,by="GEOID")%>%
   mutate(expFoodInsecurity=exp(LoudounFoodInsecurity))%>%
   filter(YEAR==2018)
 
-# Plot
-ggplot(LoudonReducedGeom, aes(fill = expFoodInsecurity, color = expFoodInsecurity)) +
+# Plot Loudoun
+# I am using the log transformation of food insecurity
+ggplot(LoudounReducedGeom, aes(fill = LoudounFoodInsecurity, color = LoudounFoodInsecurity)) +
   geom_sf(aes(geometry=geometry)) +
-  labs(title="Loudoun County",subtitle="Food Insecurity Rate (2018)")+
+  labs(title="Loudoun County",subtitle="2018 Food Insecurity Rate (log scale)")+
   theme(legend.title = element_blank())+
   scale_fill_viridis_c()+
   scale_color_viridis_c()
 
+#Get geometry data for NoVa census tracts
+NoVaGeometry<-get_acs(geography = "tract",
+                         state="VA",
+                         county=c("Arlington county",
+                                  "Fairfax county",
+                                  "Loudoun county",
+                                  "Prince William county",
+                                  "Alexandria city",
+                                  "Falls Church city",
+                                  "Fairfax city",
+                                  "Manassas city",
+                                  "Manassas Park city"),
+                         variables = "B19058_002",
+                         survey = "acs5",
+                         key = .key,
+                         year=2018,
+                         output = "wide",
+                         show_call = T,
+                         geometry = T,
+                         keep_geo_vars = T)%>%
+  select(-c(11:12))
+
+# Join geometry data to food insecurity predictions and filter data by a particular year
+NoVaReducedGeom<-NoVaReduced%>%
+  filter(YEAR==2018)%>%
+  inner_join(NoVaGeometry,by="GEOID")%>%
+  mutate(expFoodInsecurity=exp(NoVaFoodInsecurity))
+
+# There are two census tracts with very high food insecurity rates.  For the purposes 
+# of visualization and differentiation between tracts, I'm capping the rate at 4 (log scale),
+# which is equivalent to 60% food insecrity
+NoVaReducedGeom[c(172,493),14]<-4
+
+#Get county outlines for NoVa
+va_sf<-get_acs(geography = "county",
+                      state="VA",
+                      county=c("Arlington county",
+                               "Fairfax county",
+                               "Loudoun county",
+                               "Prince William county",
+                               "Alexandria city",
+                               "Falls Church city",
+                               "Fairfax city",
+                               "Manassas city",
+                               "Manassas Park city"),
+                      variables = "B19058_002",
+                      survey = "acs5",
+                      key = .key,
+                      year=2018,
+                      output = "wide",
+                      show_call = T,
+                      geometry = T,
+                      keep_geo_vars = T)%>%
+  select(COUNTYFP,geometry)
+  
+# Plot NoVa
+ggplot(NoVaReducedGeom, aes(fill = NoVaFoodInsecurity, color = NoVaFoodInsecurity)) +
+  geom_sf(aes(geometry=geometry)) +
+  geom_sf(data=va_sf,fill="transparent",color="black",size=0.5)+
+  labs(title="Northern Virginia",subtitle="2018 Food Insecurity Rate (log scale)")+
+  theme(legend.title = element_blank())+
+  scale_fill_viridis_c()+
+  scale_color_viridis_c()
 
 
