@@ -266,9 +266,9 @@ LoudounReducedGeom<-inner_join(LoudounReduced,LoudounGeometry,by="GEOID")%>%
 
 # Plot Loudoun
 # I am using the log transformation of food insecurity
-ggplot(LoudounReducedGeom, aes(fill = LoudounFoodInsecurity, color = LoudounFoodInsecurity)) +
+ggplot(LoudounReducedGeom, aes(fill = expFoodInsecurity, color = expFoodInsecurity)) +
   geom_sf(aes(geometry=geometry)) +
-  labs(title="Loudoun County",subtitle="2018 Food Insecurity Rate (log scale)")+
+  labs(title="Loudoun County",subtitle="2018 Food Insecurity Rate")+
   theme(legend.title = element_blank())+
   scale_fill_viridis_c()+
   scale_color_viridis_c()
