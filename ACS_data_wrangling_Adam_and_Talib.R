@@ -9,6 +9,7 @@ library(ggplot2)
 library(olsrr)
 library(stats)
 library(psych)
+library(viridis)
 
 # Potential variable tables for predicting food insecurity (from FeedingAmerica):
 # B14006 (non- undergraduate student poverty rate), 
@@ -264,14 +265,20 @@ LoudounReducedGeom<-inner_join(LoudounReduced,LoudounGeometry,by="GEOID")%>%
   mutate(expFoodInsecurity=exp(LoudounFoodInsecurity))%>%
   filter(YEAR==2018)
 
+#Divide Food Insecurity data for Loudon into Quantiles
+quantile.interval = quantile(LoudounReducedGeom$LoudounFoodInsecurity, probs=seq(0, 1, by = .2),na.rm = T)
+LoudounReducedGeom$LoudounFoodInsecurityQuan = cut(LoudounReducedGeom$LoudounFoodInsecurity, breaks=quantile.interval, include.lowest = TRUE)
+LoudounReducedGeom$LoudounFoodInsecurityQuan<-as.factor(LoudounReducedGeom$LoudounFoodInsecurityQuan)
+
 # Plot Loudoun
-# I am using the log transformation of food insecurity
-ggplot(LoudounReducedGeom, aes(fill = expFoodInsecurity, color = expFoodInsecurity)) +
-  geom_sf(aes(geometry=geometry)) +
+# 
+ggplot(LoudounReducedGeom) +
+  geom_sf(aes(geometry=geometry,fill = LoudounFoodInsecurityQuan,color = LoudounFoodInsecurityQuan),show.legend = F) +
   labs(title="Loudoun County",subtitle="2018 Food Insecurity Rate")+
   theme(legend.title = element_blank())+
-  scale_fill_viridis_c()+
-  scale_color_viridis_c()
+  scale_fill_viridis(discrete=T)+
+  scale_color_viridis(discrete=T)+
+  theme_bw()
 
 #Get geometry data for NoVa census tracts
 NoVaGeometry<-get_acs(geography = "tract",
@@ -327,14 +334,19 @@ va_sf<-get_acs(geography = "county",
                       geometry = T,
                       keep_geo_vars = T)%>%
   select(COUNTYFP,geometry)
-  
+#Divide Food Insecurity data for Loudon into Quantiles
+quantile.interval = quantile(NoVaReducedGeom$NoVaFoodInsecurity, probs=seq(0, 1, by = .2),na.rm = T)
+NoVaReducedGeom$NoVaFoodInsecurityQuan = cut(NoVaReducedGeom$NoVaFoodInsecurity, breaks=quantile.interval, include.lowest = TRUE)
+#LoudounReducedGeom$LoudounFoodInsecurityQuan<-as.factor(LoudounReducedGeom$LoudounFoodInsecurityQuan)
+
+
 # Plot NoVa
-ggplot(NoVaReducedGeom, aes(fill = NoVaFoodInsecurity, color = NoVaFoodInsecurity)) +
-  geom_sf(aes(geometry=geometry)) +
+ggplot(NoVaReducedGeom, aes(fill = NoVaFoodInsecurityQuan, color = NoVaFoodInsecurityQuan)) +
+  geom_sf(aes(geometry=geometry),show.legend = F) +
   geom_sf(data=va_sf,fill="transparent",color="black",size=0.5)+
   labs(title="Northern Virginia",subtitle="2018 Food Insecurity Rate (log scale)")+
   theme(legend.title = element_blank())+
-  scale_fill_viridis_c()+
-  scale_color_viridis_c()
+  scale_fill_viridis(discrete=T)+
+  scale_color_viridis(discrete=T)
 
 
