@@ -10,6 +10,10 @@ library(olsrr)
 library(stats)
 library(psych)
 library(viridis)
+library(ggthemes)
+library(ggmap)
+library(ggspatial)
+library(sf)
 
 # Potential variable tables for predicting food insecurity (from FeedingAmerica):
 # B14006 (non- undergraduate student poverty rate), 
@@ -271,15 +275,22 @@ LoudounReducedGeom$LoudounFoodInsecurityQuan = cut(LoudounReducedGeom$LoudounFoo
 LoudounReducedGeom$LoudounFoodInsecurityQuan<-as.factor(LoudounReducedGeom$LoudounFoodInsecurityQuan)
 
 # Plot Loudoun
-# 
-ggplot(LoudounReducedGeom) +
-  geom_sf(aes(geometry=geometry,fill = LoudounFoodInsecurityQuan,color = LoudounFoodInsecurityQuan),show.legend = F) +
-  labs(title="Loudoun County",subtitle="2018 Food Insecurity Rate")+
-  theme(legend.title = element_blank())+
-  scale_fill_viridis(discrete=T)+
-  scale_color_viridis(discrete=T)+
-  theme_bw()
 
+#get ggmap
+ggmap::register_google(key = .key2)
+map <- get_googlemap(center = c(lon = -77.638057, lat = 39.108329),maptype = "roadmap")
+
+#add geom_sf to ggmap
+ggmap(map)+
+  geom_sf(data=LoudounReducedGeom,inherit.aes=F,aes(geometry=geometry,fill = LoudounFoodInsecurityQuan,color = LoudounFoodInsecurityQuan),show.legend = "fill") +
+  geom_sf(data=va_sf%>%filter(COUNTYFP==107),inherit.aes=F,fill="transparent",color="black",size=0.5)+
+  labs(title="Loudoun County",subtitle="2018 Food Insecurity Rate")+
+  scale_fill_viridis(discrete=T,name = "Quantiles", labels = c("1","2","3","4","5"),guide = guide_legend(reverse=TRUE))+
+  scale_color_viridis(discrete=T,name = "Quantiles", labels = c("1","2","3","4","5"),guide = guide_legend(reverse=TRUE))+
+  theme_map()+
+  theme(legend.position=c(0.905,0.79))
+
+                        
 #Get geometry data for NoVa census tracts
 NoVaGeometry<-get_acs(geography = "tract",
                          state="VA",
@@ -334,19 +345,25 @@ va_sf<-get_acs(geography = "county",
                       geometry = T,
                       keep_geo_vars = T)%>%
   select(COUNTYFP,geometry)
+
 #Divide Food Insecurity data for Loudon into Quantiles
 quantile.interval = quantile(NoVaReducedGeom$NoVaFoodInsecurity, probs=seq(0, 1, by = .2),na.rm = T)
 NoVaReducedGeom$NoVaFoodInsecurityQuan = cut(NoVaReducedGeom$NoVaFoodInsecurity, breaks=quantile.interval, include.lowest = TRUE)
-#LoudounReducedGeom$LoudounFoodInsecurityQuan<-as.factor(LoudounReducedGeom$LoudounFoodInsecurityQuan)
+
+#Put airporst in quantile 1
+NoVaReducedGeom[c(58,59,315,316,317,382,465),26]<-"[0.195,1.53]"
 
 
 # Plot NoVa
-ggplot(NoVaReducedGeom, aes(fill = NoVaFoodInsecurityQuan, color = NoVaFoodInsecurityQuan)) +
-  geom_sf(aes(geometry=geometry),show.legend = F) +
-  geom_sf(data=va_sf,fill="transparent",color="black",size=0.5)+
-  labs(title="Northern Virginia",subtitle="2018 Food Insecurity Rate (log scale)")+
-  theme(legend.title = element_blank())+
-  scale_fill_viridis(discrete=T)+
-  scale_color_viridis(discrete=T)
+map2 <- get_googlemap(center = c(lon = -77.543986, lat = 38.858802),zoom=9, maptype = "roadmap")
+
+ggmap(map2) +
+  geom_sf(data=NoVaReducedGeom,inherit.aes=F,aes(geometry=geometry,fill = NoVaFoodInsecurityQuan, color = NoVaFoodInsecurityQuan),show.legend = "fill") +
+  geom_sf(data=va_sf,inherit.aes=F,fill="transparent",color="black",size=0.5)+
+  labs(title="Northern Virginia",subtitle="2018 Food Insecurity Rate")+
+  scale_fill_viridis(discrete=T,name = "Quantiles", labels = c("1","2","3","4","5"),guide = guide_legend(reverse=TRUE))+
+  scale_color_viridis(discrete=T,name = "Quantiles", labels = c("1","2","3","4","5"),guide = guide_legend(reverse=TRUE))+
+  theme_map()+
+  theme(legend.position=c(0.905,0.79))
 
 
