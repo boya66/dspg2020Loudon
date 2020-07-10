@@ -3,7 +3,7 @@ source('google_maps_api.R')
 
 ## load food pantry address
 library(readxl)
-data <- read_excel("data/Food_Pantries_in_Loudon_County.xlsx", sheet = 4)
+data <- read_excel("data/food_pantry_loudon.xlsx", sheet = 1)[1:17,]
 data <- transform(data, lon = rep(NA, nrow(data)), lat = rep(NA, nrow(data)))
 
 for(i in 1:nrow(data)){
