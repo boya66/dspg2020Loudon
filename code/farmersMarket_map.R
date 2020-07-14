@@ -3,6 +3,8 @@ setwd("C:/Users/Admin/Documents/DSPG/Loudoun/GitHub/dspg2020Loudon")
 
 library(dplyr)
 library(tidyverse)
+library(ggmap)
+library(leaflet)
 
 # Project Scope Def
 nova_counties  <- c("Arlington",
@@ -17,7 +19,52 @@ nova_counties  <- c("Arlington",
                     "Fauquier")
 
 
-farmersMarket_data <- read.csv("data/MarketMaker_Farmers Markets_Virginia.csv")
+farmersMarket_data <- read.csv("data/MarketMaker_Farmers Markets_Virginia.csv", stringsAsFactors = FALSE)
   
 farmersMarket_data_filtered <- farmersMarket_data %>%
   filter(County %in% nova_counties)
+
+# Separate farmers market locations with unclean address1 field.
+unclean_farmersMarket_data <- farmersMarket_data_filtered %>%
+  filter(Business %in% c("Archwood Green Barns", "Archwood Green Barns Farmers Market",
+                         "Field to Table, Inc.", "Warrenton Saturday Farmers Market" ))
+
+# Add extra entry since Field to Table Inc manages multiple Farmers Markets
+unclean_farmersMarket_data$Address2 <- unclean_farmersMarket_data$Address1
+unclean_farmersMarket_data$Address1 <- ""
+unclean_farmersMarket_data <- rbind(unclean_farmersMarket_data, 
+                                    subset(unclean_farmersMarket_data, Business == "Field to Table, Inc."))
+
+
+unclean_farmersMarket_data[3, 2] <- "Field to Table, Inc.; Fairlington Farmers Market"
+unclean_farmersMarket_data[3, 3] <- "3308 S Stafford St, Arlington, VA 22206"
+
+unclean_farmersMarket_data[5, 2] <- "Field to Table, Inc.; Marymount Farmers Market"
+unclean_farmersMarket_data[5, 3] <- "2807 N Glebe Rd, Arlington, VA 22207"
+
+unclean_farmersMarket_data[2, 3] <- "4557 Old Tavern Rd, The Plains, VA 20198"
+unclean_farmersMarket_data[4, 3] <- "S 5th St & E Lee St, Warrenton, VA 20186"
+unclean_farmersMarket_data[1, 3] <- NA
+unclean_farmersMarket_data[2, 4] <- "P.O. Box 269"
+
+# Remove duplicates with uncleaned to be merge
+farmersMarket_data_filtered <- farmersMarket_data_filtered %>%
+  filter(Business != "Archwood Green Barns") %>%
+  filter(Business != "Archwood Green Barns Farmers Market") %>%
+  filter(Business != "Field to Table, Inc.") %>%
+  filter(Business != "Warrenton Farmers Market (Saturday)") %>%
+  filter(Business != "Warrenton Saturday Farmers Market")
+
+# Merge
+cleaned_farmersMarket_data <- rbind(farmersMarket_data_filtered, 
+                                    unclean_farmersMarket_data[2:nrow(unclean_farmersMarket_data),])
+
+# Rename column as misc address data (keep extra data)
+names(cleaned_farmersMarket_data)[names(cleaned_farmersMarket_data) == "Address2"] <- "Misc Address Info"
+
+write.csv(cleaned_farmersMarket_data, 
+          "C:/Users/Admin/Documents/DSPG/Loudoun/GitHub/dspg2020Loudon/data\\cleaned_MarketMaker_FarmersMarket_Virginia.csv",
+          row.names = FALSE)
+
+
+register_google(key = "AIzaSyBJD6VBw-QncBMQPrLv8yVE8gheQQc9TFc")
