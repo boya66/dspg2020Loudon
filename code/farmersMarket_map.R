@@ -67,4 +67,4 @@ write.csv(cleaned_farmersMarket_data,
           row.names = FALSE)
 
 
-register_google(key = "AIzaSyBJD6VBw-QncBMQPrLv8yVE8gheQQc9TFc")
+register_google(key = "")
