@@ -68,10 +68,13 @@ farmersMarket_data_filtered <- farmersMarket_data_filtered %>%
 cleaned_farmersMarket_data <- rbind(farmersMarket_data_filtered, 
                                     unclean_farmersMarket_data[2:nrow(unclean_farmersMarket_data),])
 
+
 # Rename column as misc address data (keep extra data)
 names(cleaned_farmersMarket_data)[names(cleaned_farmersMarket_data) == "Address2"] <- "Misc Address Info"
 
-
+# Correcting addresses 
+cleaned_farmersMarket_data$fullAddress[cleaned_farmersMarket_data$Business == "Columbia Pike Farmers Market"] <- "2705 Columbia Pike Arlington, Virginia 22204"
+cleaned_farmersMarket_data$fullAddress[cleaned_farmersMarket_data$Business == "Warrenton Saturday Farmers Market"] <- "96 E Lee St Warrenton, VA 20186"
 
 write.csv(cleaned_farmersMarket_data, 
           "C:/Users/Admin/Documents/DSPG/Loudoun/GitHub/dspg2020Loudon/data\\cleaned_MarketMaker_FarmersMarket_Virginia.csv",
@@ -82,9 +85,12 @@ register_google(key = "")
 
 
 
+# Geocoding
+# FarmersMarket_locations <- mutate_geocode(cleaned_farmersMarket_data, fullAddress)
 
- locations_df <- mutate_geocode(cleaned_farmersMarket_data, fullAddress)
-
+write.csv(FarmersMarket_locations, 
+          "C:/Users/Admin/Documents/DSPG/Loudoun/GitHub/dspg2020Loudon/data\\FarmersMarket_locations.csv",
+          row.names = FALSE)
 
 
          
