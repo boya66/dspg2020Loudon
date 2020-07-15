@@ -5,6 +5,8 @@ library(dplyr)
 library(tidyverse)
 library(ggmap)
 library(leaflet)
+library(rgdal)
+library(sf)
 
 # Project Scope Def
 nova_counties  <- c("Arlington",
@@ -47,6 +49,13 @@ unclean_farmersMarket_data[4, 3] <- "S 5th St & E Lee St, Warrenton, VA 20186"
 unclean_farmersMarket_data[1, 3] <- NA
 unclean_farmersMarket_data[2, 4] <- "P.O. Box 269"
 
+unclean_farmersMarket_data <- unclean_farmersMarket_data %>%
+  mutate(fullAddress = Address1)
+  
+
+farmersMarket_data_filtered <- farmersMarket_data_filtered %>%
+  mutate(fullAddress = paste(Address1, City, State, Zip, sep=" "))
+
 # Remove duplicates with uncleaned to be merge
 farmersMarket_data_filtered <- farmersMarket_data_filtered %>%
   filter(Business != "Archwood Green Barns") %>%
@@ -62,9 +71,66 @@ cleaned_farmersMarket_data <- rbind(farmersMarket_data_filtered,
 # Rename column as misc address data (keep extra data)
 names(cleaned_farmersMarket_data)[names(cleaned_farmersMarket_data) == "Address2"] <- "Misc Address Info"
 
+
+
 write.csv(cleaned_farmersMarket_data, 
           "C:/Users/Admin/Documents/DSPG/Loudoun/GitHub/dspg2020Loudon/data\\cleaned_MarketMaker_FarmersMarket_Virginia.csv",
           row.names = FALSE)
 
 
 register_google(key = "")
+
+
+
+
+ locations_df <- mutate_geocode(cleaned_farmersMarket_data, fullAddress)
+
+
+
+         
+
+
+# Get Country Outlines
+va_sf<-get_acs(geography = "county",
+               state="VA",
+               county=c("Arlington county",
+                        "Fairfax county",
+                        "Loudoun county",
+                        "Prince William county",
+                        "Alexandria city",
+                        "Falls Church city",
+                        "Fairfax city",
+                        "Manassas city",
+                        "Manassas Park city",
+                        "Fauquier County"),
+               variables = "B19058_002",
+               survey = "acs5",
+               key = myACSkey,
+               year=2018,
+               output = "wide",
+               show_call = T,
+               geometry = T,
+               keep_geo_vars = T)%>%
+  select(COUNTYFP,geometry)
+
+# Get Loudoun County Outline only
+loudoun_outline<-get_acs(geography = "county",
+                         state="VA",
+                         county=c("Loudoun county"),
+                         variables = "B19058_002",
+                         survey = "acs5",
+                         key = myACSkey,
+                         year=2018,
+                         output = "wide",
+                         show_call = T,
+                         geometry = T,
+                         keep_geo_vars = T)%>%
+  select(COUNTYFP,geometry)
+
+
+ggplot(map_and_data) + 
+  geom_sf(data=va_sf, fill="transparent", color="black", size=.5) +
+  geom_sf(data=loudoun_outline, fill="transparent", color="red", size=.75) +
+  ylim(-38.4,-39.3) + xlim(-78.1, -77) + 
+  theme_bw() +
+  theme(legend.title = element_blank()) 
