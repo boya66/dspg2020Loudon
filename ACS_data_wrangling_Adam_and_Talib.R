@@ -134,7 +134,8 @@ acs_NoVa<-acs_years_tables(tables=tables,
                                       "Falls Church city",
                                       "Fairfax city",
                                       "Manassas city",
-                                      "Manassas Park city"),
+                                      "Manassas Park city",
+                                      "Fauquier county"),
                              NAME_col_names = colnames)
 colnames="state"
 acs_state<-acs_years_tables(tables = tables,
@@ -302,7 +303,8 @@ NoVaGeometry<-get_acs(geography = "tract",
                                   "Falls Church city",
                                   "Fairfax city",
                                   "Manassas city",
-                                  "Manassas Park city"),
+                                  "Manassas Park city",
+                                  "Fauquier county"),
                          variables = "B19058_002",
                          survey = "acs5",
                          key = .key,
@@ -322,7 +324,7 @@ NoVaReducedGeom<-NoVaReduced%>%
 # There are two census tracts with very high food insecurity rates.  For the purposes 
 # of visualization and differentiation between tracts, I'm capping the rate at 4 (log scale),
 # which is equivalent to 60% food insecrity
-NoVaReducedGeom[c(172,493),14]<-4
+#NoVaReducedGeom[c(172,493),14]<-4
 
 #Get county outlines for NoVa
 va_sf<-get_acs(geography = "county",
@@ -335,7 +337,8 @@ va_sf<-get_acs(geography = "county",
                                "Falls Church city",
                                "Fairfax city",
                                "Manassas city",
-                               "Manassas Park city"),
+                               "Manassas Park city",
+                               "Fauquier county"),
                       variables = "B19058_002",
                       survey = "acs5",
                       key = .key,
@@ -350,20 +353,21 @@ va_sf<-get_acs(geography = "county",
 quantile.interval = quantile(NoVaReducedGeom$NoVaFoodInsecurity, probs=seq(0, 1, by = .2),na.rm = T)
 NoVaReducedGeom$NoVaFoodInsecurityQuan = cut(NoVaReducedGeom$NoVaFoodInsecurity, breaks=quantile.interval, include.lowest = TRUE)
 
-#Put airporst in quantile 1
-NoVaReducedGeom[c(58,59,315,316,317,382,465),26]<-"[0.195,1.53]"
+#Put NAs in quantile 1
+NoVaReducedGeom$NoVaFoodInsecurityQuan[is.na(NoVaReducedGeom$NoVaFoodInsecurityQuan)]<-"[0.195,1.53]"
 
 
 # Plot NoVa
 map2 <- get_googlemap(center = c(lon = -77.543986, lat = 38.858802),zoom=9, maptype = "roadmap")
 
-ggmap(map2) +
+ggmap(map2) 
+
+ggplot()+
   geom_sf(data=NoVaReducedGeom,inherit.aes=F,aes(geometry=geometry,fill = NoVaFoodInsecurityQuan, color = NoVaFoodInsecurityQuan),show.legend = "fill") +
   geom_sf(data=va_sf,inherit.aes=F,fill="transparent",color="black",size=0.5)+
+  geom_sf(data=va_sf%>%filter(COUNTYFP==107),fill="transparent",color="red",size=0.7,show.legend = F)+
   labs(title="Northern Virginia",subtitle="2018 Food Insecurity Rate")+
   scale_fill_viridis(discrete=T,name = "Quantiles", labels = c("1","2","3","4","5"),guide = guide_legend(reverse=TRUE))+
-  scale_color_viridis(discrete=T,name = "Quantiles", labels = c("1","2","3","4","5"),guide = guide_legend(reverse=TRUE))+
-  theme_map()+
-  theme(legend.position=c(0.905,0.79))
+  scale_color_viridis(discrete=T,name = "Quantiles", labels = c("1","2","3","4","5"),guide = guide_legend(reverse=TRUE))
 
 
