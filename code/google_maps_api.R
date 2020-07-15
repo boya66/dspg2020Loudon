@@ -1,5 +1,3 @@
-# key=AIzaSyCrIIxqLUcuoeM10vDoCw34prLGlzOBUOs
-
 library(RCurl)
 library(RJSONIO)
 library(plyr)
@@ -7,7 +5,7 @@ library(plyr)
 url <- function(address, return.call = "json", sensor = "false") {
   root <- "https://maps.google.com/maps/api/geocode/"
   u <- paste(root, return.call, "?address=", address, "&sensor=", sensor, 
-             "&key=AIzaSyCrIIxqLUcuoeM10vDoCw34prLGlzOBUOs", sep = "")
+             "&key=AIzaSyCPbvSdNeDXaLYdpaylxBMPSBX4LeRwF6A", sep = "")
   return(URLencode(u))
 }
 
@@ -28,5 +26,5 @@ geoCode <- function(address,verbose=FALSE) {
   }
 }
 
-address <- geoCode("The White House, Washington, DC")
+# address <- geoCode("The White House, Washington, DC")
 
