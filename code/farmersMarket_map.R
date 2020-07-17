@@ -94,10 +94,14 @@ register_google(key = "")
 write.csv(FarmersMarket_locations, 
           "C:/Users/Admin/Documents/DSPG/Loudoun/GitHub/dspg2020Loudon/data\\FarmersMarket_locations.csv",
           row.names = FALSE)
-NOVA_foodpantry_loc <- read.csv("C:/Users/Admin/Documents/DSPG/Loudoun/GitHub/dspg2020Loudon/data/FoodPantries_NOVA_Locations.csv", 
+NOVA_foodpantry_loc <- read.csv("C:/Users/Admin/Documents/DSPG/Loudoun/GitHub/dspg2020Loudon/data/FoodPantries_nova.csv", 
                                 header=T, stringsAsFactors = FALSE)
          
 # NOVA_foodpantry_loc[1] <- mutate_geocode(NOVA_foodpantry_loc[1], Address)
+
+write.csv(NOVA_foodpantry_loc, 
+          "C:/Users/Admin/Documents/DSPG/Loudoun/GitHub/dspg2020Loudon/data\\Pantry_locations_NOVA.csv",
+          row.names = FALSE)
 
 # Get Country Outlines
 va_sf<-get_acs(geography = "county",
