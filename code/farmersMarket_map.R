@@ -8,6 +8,8 @@ library(leaflet)
 library(rgdal)
 library(sf)
 
+library(rgeos)
+
 # Project Scope Def
 nova_counties  <- c("Arlington",
                     "Fairfax",
@@ -88,13 +90,14 @@ register_google(key = "")
 # Geocoding
 # FarmersMarket_locations <- mutate_geocode(cleaned_farmersMarket_data, fullAddress)
 
+
 write.csv(FarmersMarket_locations, 
           "C:/Users/Admin/Documents/DSPG/Loudoun/GitHub/dspg2020Loudon/data\\FarmersMarket_locations.csv",
           row.names = FALSE)
-
-
+NOVA_foodpantry_loc <- read.csv("C:/Users/Admin/Documents/DSPG/Loudoun/GitHub/dspg2020Loudon/data/FoodPantries_NOVA_Locations.csv", 
+                                header=T, stringsAsFactors = FALSE)
          
-
+# NOVA_foodpantry_loc[1] <- mutate_geocode(NOVA_foodpantry_loc[1], Address)
 
 # Get Country Outlines
 va_sf<-get_acs(geography = "county",
@@ -135,8 +138,10 @@ loudoun_outline<-get_acs(geography = "county",
 
 
 ggplot(map_and_data) + 
+  geom_point(data=FarmersMarket_locations, aes(x=lon, y=lat), size=1.5) +
   geom_sf(data=va_sf, fill="transparent", color="black", size=.5) +
   geom_sf(data=loudoun_outline, fill="transparent", color="red", size=.75) +
-  ylim(-38.4,-39.3) + xlim(-78.1, -77) + 
   theme_bw() +
   theme(legend.title = element_blank()) 
+
+
