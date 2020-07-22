@@ -5,3 +5,4 @@
 - `add_food_pantry_geoloc.R` find geographic locations for food pantries
 - `foodAccess_Indicator.R` calculate indicator using distances
 - `vulnerability_score_map.R` map CDC SVI Indicator
+- `composite_indicator.R` create composite indicator with PCA/factor analysis on a toy example
