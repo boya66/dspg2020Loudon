@@ -48,6 +48,7 @@ foodRetailersNOVA$fullAddress[foodRetailersNOVA$Business == "Talk-The Town Gourm
 foodRetailersNOVA$fullAddress[foodRetailersNOVA$BusinessId == 4309133] <- "1521 N Quaker Ln Alexandria, VA 22302"
 
 myACSkey <- ""
+# Get County Outlines
 va_sf<-get_acs(geography = "county",
                state="VA",
                county=c("Arlington county",
@@ -112,8 +113,8 @@ write.csv(foodRetailersNOVA,
 
 
 # Rename columns in Census Tract Population Center data set
-colnames(CenterPop_tract)[5] <- "CENTER.LATITUDE"
-colnames(CenterPop_tract)[6] <- "CENTER.LONGITUDE"
+  colnames(CenterPop_tract)[5] <- "CENTER.LATITUDE"
+  colnames(CenterPop_tract)[6] <- "CENTER.LONGITUDE"
 
 for(i in 1:nrow(CenterPop_tract)){
   CenterPop_tract$TRACTCE[i] <- str_pad(CenterPop_tract$TRACTCE[i], 6, pad="0")
@@ -138,36 +139,108 @@ calculate_distance <- function(long1, lat1, long2, lat2){
 
 
 # Pass in location points dataset
-# radius default is 5 miles (in km)
+# radius defaults are 5, 10, 20 miles (in meters)
 # uses Tract Population center
-loc_within_radius <- function(loc_data, radius = 8046.72){
+loc_within_radius <- function(loc_data, radius_1 = 8046.72, radius_2 = 16093.4, radius_3 = 32186.9){
   centerData_copy <- CenterPopTR_mapNOVA
-  centerData_copy$COUNT.IN.RADIUS <- NA
+  
+  centerData_copy$COUNT_5mile <- NA
+  centerData_copy$INVERSE_DIST_5mile <- NA
+  centerData_copy$COUNT_10mile <- NA
+  centerData_copy$INVERSE_DIST_10mile <- NA
+  centerData_copy$COUNT_20mile <- NA
+  centerData_copy$INVERSE_DIST_20mile <- NA
+  
   for(i in 1:nrow(centerData_copy)){
-    count <- 0
-    centerData_copy$COUNT.IN.RADIUS[i] <- 0
+    count_1 <- 0
+    inverse_dist_1 <- 0
+    count_2 <- 0
+    inverse_dist_2 <- 0
+    count_3 <- 0
+    inverse_dist_3 <- 0
+    centerData_copy$COUNT_5mile[i] <- 0
+    centerData_copy$INVERSE_DIST_5mile[i] <- 0
+    centerData_copy$COUNT_10mile[i] <- 0
+    centerData_copy$INVERSE_DIST_10mile[i] <- 0
+    centerData_copy$COUNT_20mile[i] <- 0
+    centerData_copy$INVERSE_DIST_20mile[i] <- 0
+    
     for(j in 1:nrow(loc_data)){
       distance <- calculate_distance(centerData_copy$CENTER.LONGITUDE[i], centerData_copy$CENTER.LATITUDE[i],
                                      loc_data$lon[j], loc_data$lat[j])
-      if(distance <= radius)
-        count <- count + 1
+      
+      if(distance <= radius_1){
+        count_1 <- count_1 + 1
+        inverse_dist_1 <- (1/distance) + inverse_dist_1
+      }
+      if(distance <= radius_2){
+        count_2 <- count_2 + 1
+        inverse_dist_2 <- (1/distance) + inverse_dist_2
+      }
+      if(distance <= radius_3){
+        count_3 <- count_3 + 1
+        inverse_dist_3 <- (1/distance) + inverse_dist_3
+      }
+      
     }
-    centerData_copy$COUNT.IN.RADIUS[i] <- count
+    centerData_copy$COUNT_5mile[i] <- count_1
+    centerData_copy$INVERSE_DIST_5mile[i] <- inverse_dist_1 / centerData_copy$POPULATION[i]
+    centerData_copy$COUNT_10mile[i] <- count_2
+    centerData_copy$INVERSE_DIST_10mile[i] <- inverse_dist_2 / centerData_copy$POPULATION[i]
+    centerData_copy$COUNT_20mile[i] <- count_3
+    centerData_copy$INVERSE_DIST_20mile[i] <- inverse_dist_3 / centerData_copy$POPULATION[i]
   }
   return(centerData_copy)
 }
 
 
+# Output columns are COUNT_5mile... COUNT_20mile, INVERSE_DIST_5mile...INVERSE_DIST_20mile
 output <- loc_within_radius(foodRetailersNOVA)
   
 
 # Map of count of retailers within radius
 ggplot(output) + 
-  geom_sf(aes(fill= COUNT.IN.RADIUS, geometry=geometry)) +
+  geom_sf(aes(fill= INVERSE_DIST_10mile, geometry=geometry)) +
   geom_sf(data=va_sf, fill="transparent", color="black", size=.5) +
   geom_sf(data=loudoun_outline, fill="transparent", color="red", size=.75) +
   ylim(-38.4,-39.3) + xlim(-78.1, -77) +
   scale_fill_viridis_c() + scale_color_viridis_c() +
   theme_bw() +theme(legend.title = element_blank())
+
+
+
+# Map of count of retailers within radius
+ggplot(output) + 
+  geom_sf(aes(fill= COUNT_10mile, geometry=geometry)) +
+  geom_sf(data=va_sf, fill="transparent", color="black", size=.5) +
+  geom_sf(data=loudoun_outline, fill="transparent", color="red", size=.75) +
+  ylim(-38.4,-39.3) + xlim(-78.1, -77) +
+  # scale_fill_gradientn(colours=c("red", "yellow", "green", "blue") ,name="Count", trans="log",  
+  #                     breaks = c(0, 1, 3, 5, 10, 30, 100), labels=c(0, 1, 3, 5, 10, 30, 100),
+  #                     na.value="grey") +
+  theme_bw() +theme(legend.title = element_blank()) +
+  ggtitle("Food Retailer Count within 10 Miles of Tract Center")
+  
+# Map of inverse distance of retailers within radius
+ggplot(output) + 
+  geom_sf(aes(fill= INVERSE_DIST_20mile, geometry=geometry)) +
+  geom_sf(data=va_sf, fill="transparent", color="black", size=.5) +
+  geom_sf(data=loudoun_outline, fill="transparent", color="red", size=.75) +
+  ylim(-38.4,-39.3) + xlim(-78.1, -77) +
+  scale_fill_gradientn(colours=c("red", "yellow", "green", "blue") ,name="Count", trans="log",  
+                       breaks = c(0, 0.000001, 0.00001, 0.0001, 0.001, 0.01), labels=c(0, 0.000001, 0.00001, 0.0001, 0.001, .01),
+                      na.value="grey") +
+  theme_bw() +theme(legend.title = element_blank()) + 
+  ggtitle("Inverse Distance for Food Retailer within 20 Miles of Tract Center")
+
+
+
+tmp <- output %>%
+  select(GEOID, INVERSE_DIST_10mile, INVERSE_DIST_20mile, COUNT_5mile)
+tmp$INVERSE_DIST_20mile[is.nan(tmp$INVERSE_DIST_20mile)] <- 0 
+
+write.csv(tmp, 
+          "C:/Users/Admin/Documents/DSPG/Loudoun/GitHub/dspg2020Loudon/data\\foodRetailer_TRscore.csv",
+          row.names = FALSE)
 
 
