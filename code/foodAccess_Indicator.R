@@ -212,8 +212,8 @@ ggplot(output) +
 # Map of count of retailers within radius
 ggplot(output) + 
   geom_sf(aes(fill= COUNT_10mile, geometry=geometry)) +
-  geom_sf(data=va_sf, fill="transparent", color="black", size=.5) +
-  geom_sf(data=loudoun_outline, fill="transparent", color="red", size=.75) +
+  # geom_sf(data=va_sf, fill="transparent", color="black", size=.5) +
+  # geom_sf(data=loudoun_outline, fill="transparent", color="red", size=.75) +
   ylim(-38.4,-39.3) + xlim(-78.1, -77) +
   # scale_fill_gradientn(colours=c("red", "yellow", "green", "blue") ,name="Count", trans="log",  
   #                     breaks = c(0, 1, 3, 5, 10, 30, 100), labels=c(0, 1, 3, 5, 10, 30, 100),

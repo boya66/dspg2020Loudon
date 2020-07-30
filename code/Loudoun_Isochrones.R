@@ -18,12 +18,12 @@ library(mapview)
 
 
 #importing relevant data files
-FoodPantry_NOVA_geoloc <- read_csv("~/dspg2020Loudon/data/FoodAccessGeoLocData/FoodPantry_NOVA_geoloc.csv")
+FoodPantry_NOVA_geoloc <- read_csv("data/FoodAccessGeoLocData/FoodPantry_NOVA_geoloc.csv")
 FoodPantry_NOVA_geoloc$Name[28]<-"Messiahs Market Community Church"
 FoodPantry_NOVA_geoloc$Name[31]<-"Sterling United Methodist - Grace Ministry"
 
-FarmersMarket_NOVA_geoloc <- read_csv("~/dspg2020Loudon/data/FoodAccessGeoLocData/FarmersMarket_NOVA_geoloc.csv")
-FoodRetailers_NOVA_geoloc <- read_csv("~/dspg2020Loudon/data/FoodAccessGeoLocData/FoodRetailers_NOVA_geoloc.csv")
+FarmersMarket_NOVA_geoloc <- read_csv("data/FoodAccessGeoLocData/FarmersMarket_NOVA_geoloc.csv")
+FoodRetailers_NOVA_geoloc <- read_csv("data/FoodAccessGeoLocData/FoodRetailers_NOVA_geoloc.csv")
 
 
 #Geometry for NoVa
